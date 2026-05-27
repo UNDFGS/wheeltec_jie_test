@@ -1,0 +1,53 @@
+# ============================================================
+# 导航参数 —— FAST-LIO 重定位 + 通用机器人平台
+# 不再依赖 Odin 1 / D1 机器人
+# ============================================================
+
+# 重定位地图（open3d_loc ICP 匹配用，与 OctoMap 导航用同一个 PCD）
+relocalization_bin_file: /home/und/桌面/CorrectedFrontendMap_cut.pcd
+relocalization_pcd_file: /home/und/桌面/CorrectedFrontendMap_cut.pcd
+map_package_dir: /home/und/maps/default
+
+show_rviz: true
+show_map_gui: true
+publish_d1_odom: false
+use_static_odom_to_base: false
+
+# ---- d1_controller 参数（通用平台） ----
+d1_controller:
+  ros__parameters:
+    # TF 坐标系 — 匹配 FAST-LIO + open3d_loc
+    # map → odom → base_link
+    robot_center_offset_frame: base_link
+    robot_center_offset_x: 0.0
+    robot_center_offset_y: 0.0
+    robot_center_offset_z: 0.0
+    tracking_point_reached_xy_tolerance: 0.40
+    tracking_point_marker_scale: 0.28
+
+    # OpenCV 跟踪调试视图
+    enable_tracking_debug_view: true
+    tracking_debug_view_size_px: 640
+    tracking_debug_view_pixels_per_meter: 80.0
+    tracking_debug_view_frequency: 10.0
+
+    # 速度跟踪增益（野外保守参数）
+    linear_gain: 0.8
+    lateral_gain: 0.6
+    heading_gain: 0.6
+    cross_track_angular_gain: 0.4
+    final_yaw_gain: 0.3
+
+    # 运动模式
+    enable_lateral_motion: true
+    max_linear_speed: 0.5
+    max_lateral_speed: 0.3
+    max_angular_speed: 0.8
+
+    # 死区和终点容差
+    align_final_yaw: true
+    linear_deadband: 0.05
+    lateral_deadband: 0.05
+    angular_deadband: 0.05
+    goal_position_tolerance: 0.2
+    goal_yaw_tolerance: 0.15

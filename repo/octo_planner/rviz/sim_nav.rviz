@@ -1,0 +1,124 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Plane Cell Count: 100
+      Cell Size: 1.0
+      Normal Cell Count: 0
+      Reference Frame: map
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Enabled: true
+      Description Topic: /robot_description
+      Visual Enabled: true
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Frame Timeout: 1.0
+      All Enabled: false
+      Frames:
+        map: true
+        odom: true
+        base_link: true
+        body_link: true
+      Marker Scale: 0.5
+    - Class: rviz_default_plugins/Marker
+      Name: OctoMap Occupied
+      Enabled: true
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /octomap_occupied_markers
+    - Class: rviz_default_plugins/Marker
+      Name: Planned Path
+      Enabled: true
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /planned_path_marker
+    - Class: rviz_default_plugins/Marker
+      Name: Preblocked Cells
+      Enabled: false
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /preblocked_cells_markers
+    - Class: rviz_default_plugins/Marker
+      Name: Traversable Cells
+      Enabled: false
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /traversable_cells_markers
+    - Class: rviz_default_plugins/Marker
+      Name: Tracking Point
+      Enabled: true
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /tracking_point_marker
+    - Class: rviz_default_plugins/Path
+      Name: Global Path (A*)
+      Enabled: true
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /planned_path
+      Color: 0; 200; 200
+      Line Width: 0.05
+    - Class: rviz_default_plugins/Path
+      Name: EGO Local Path
+      Enabled: true
+      Topic:
+        Depth: 5
+        Durability Policy: Transient Local
+        Reliability Policy: Reliable
+        Value: /ego_local_path
+      Color: 255; 165; 0
+      Line Width: 0.08
+  Enabled: true
+  Global Options:
+    Fixed Frame: map
+    Frame Rate: 30
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+    - Class: rviz_default_plugins/SetInitialPose
+    - Class: rviz_default_plugins/SetGoal
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 30.0
+      Focal Point:
+        X: 15.0
+        Y: 0.0
+        Z: 0.0
+      Name: Current View
+      Pitch: 0.8
+      Yaw: 3.9
+    Saved: {}
+
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 900
+  Width: 1400

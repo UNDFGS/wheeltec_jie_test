@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+<robot name="ackermann_robot">
+
+  <material name="black"><color rgba="0.1 0.1 0.1 1.0"/></material>
+  <material name="dark_grey"><color rgba="0.3 0.3 0.35 1.0"/></material>
+  <material name="orange"><color rgba="1.0 0.5 0.1 1.0"/></material>
+  <material name="blue"><color rgba="0.2 0.4 1.0 0.8"/></material>
+  <material name="red"><color rgba="1.0 0.1 0.1 1.0"/></material>
+  <material name="green"><color rgba="0.1 0.9 0.3 1.0"/></material>
+
+  <!-- ======== Base Link (chassis) ======== -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.18" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.7 0.35 0.18"/>
+      </geometry>
+      <material name="dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.18" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.7 0.35 0.18"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ======== Cabin ======== -->
+  <link name="cabin_link">
+    <visual>
+      <origin xyz="0.05 0 0.47" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.3 0.3 0.2"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+  </link>
+  <joint name="cabin_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="cabin_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ======== Laser sensor ======== -->
+  <link name="laser_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.04" length="0.05"/>
+      </geometry>
+      <material name="red"/>
+    </visual>
+  </link>
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser_link"/>
+    <origin xyz="0.30 0 0.32" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ======== Left Front Wheel (steerable) ======== -->
+  <link name="left_front_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <!-- Steering axis: z-axis, steer left/right -->
+  <joint name="left_steering_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="left_front_wheel"/>
+    <origin xyz="0.28 0.20 0.09" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.6" upper="0.6" effort="100" velocity="10"/>
+  </joint>
+
+  <!-- ======== Right Front Wheel (steerable) ======== -->
+  <link name="right_front_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_steering_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="right_front_wheel"/>
+    <origin xyz="0.28 -0.20 0.09" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.6" upper="0.6" effort="100" velocity="10"/>
+  </joint>
+
+  <!-- ======== Left Rear Wheel (driven, fixed) ======== -->
+  <link name="left_rear_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_rear_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_rear_wheel"/>
+    <origin xyz="-0.28 0.20 0.09" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- ======== Right Rear Wheel (driven, fixed) ======== -->
+  <link name="right_rear_wheel">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.09" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_rear_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_rear_wheel"/>
+    <origin xyz="-0.28 -0.20 0.09" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- ======== Forward direction arrow ======== -->
+  <link name="front_arrow">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 1.5708 0"/>
+      <geometry>
+        <cylinder radius="0.02" length="0.25"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+  </link>
+  <joint name="front_arrow_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_arrow"/>
+    <origin xyz="0.35 0 0.20" rpy="0 0 0"/>
+  </joint>
+
+</robot>
