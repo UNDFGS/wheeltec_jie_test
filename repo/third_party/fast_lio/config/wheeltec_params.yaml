@@ -1,0 +1,60 @@
+/**:
+  ros__parameters:
+    # ========================== 基础控制参数 =======================================
+    feature_extract_enable: false      # ← 改成 false（用全点云模式，最稳）
+    point_filter_num: 2               # 保持 1（保留最多点）
+    max_iteration: 3                  
+    runtime_pos_log_enable: false       # ← 临时开启，方便看日志
+
+    # ========================== 空间体素降采样 ==========================
+    filter_size_surf: 0.2              # ← 推荐安全值（之前成功过）
+    filter_size_map: 0.2               # ← 必须一致
+
+    cube_side_length: 500.0            # ← 增大（防止频繁清地图）
+
+    map_file_path: "/home/und/map/Wheeltec_map.pcd"
+
+    # ========================== 话题配置 ==========================================
+    common:
+      lid_topic: "/point_cloud_raw"
+      imu_topic: "/imu/data_raw"
+      frame_id: "odom"
+      publish_tf: true
+      tf_update_freq: 10.0
+      time_sync_en: false
+      time_offset_lidar_to_imu: 0.0      # ← 保持，但下面我加了补偿测试选项
+
+    # ========================== 雷达预处理 ==========================
+    preprocess:
+      lidar_type: 2 #禾塞雷达
+      scan_line: 16
+      scan_rate: 10
+      timestamp_unit: 0
+      blind: 1.0                         
+
+    # ========================== 状态估计与噪声参数 ==========================
+    mapping:
+      imu_en: true
+      acc_cov: 0.01
+      gyr_cov: 0.01
+      b_acc_cov: 0.0001
+      b_gyr_cov: 0.0001
+      fov_degree: 360.0
+      det_range: 50.0                   
+      extrinsic_est_en: false
+      extrinsic_T: [-0.4, 0.14, 0.0]
+      extrinsic_R: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+
+    # ========================== 可视化与保存 ==========================
+    publish:
+      path_en: true
+      scan_publish_en: true
+      dense_publish_en: true
+      scan_bodyframe_pub_en: true
+      map_publish_en: true
+      map_en: true #点云地图发布开关
+
+    pcd_save:
+      pcd_save_en: false
+      interval: -1
+      
