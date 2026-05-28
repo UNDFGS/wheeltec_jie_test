@@ -36,9 +36,16 @@ def generate_launch_description():
         description="仿真模式 (True=运动模拟+OctoMap点云, False=实机LiDAR+雷达点云)",
     )
 
-    # ---- URDF (Wheeltec R550 Plus) ----
-    wheeltec_share = get_package_share_directory("wheeltec_robot_urdf")
-    urdf_file = os.path.join(wheeltec_share, "urdf", "autoware_akm_ultra_single_antenna_robot.urdf")
+    # ---- URDF (R550 Plus Ackermann) ----
+    # 优先使用本地内置的 autoware_akm URDF (repo 自包含)
+    urdf_file = os.path.join(octo_planner_share, "urdf", "autoware_akm_ultra_single_antenna_robot.urdf")
+    if not os.path.isfile(urdf_file):
+        # fallback: wheeltec_robot_urdf ROS 包
+        try:
+            wheeltec_share = get_package_share_directory("wheeltec_robot_urdf")
+            urdf_file = os.path.join(wheeltec_share, "urdf", "autoware_akm_ultra_single_antenna_robot.urdf")
+        except Exception:
+            pass
     if not os.path.isfile(urdf_file):
         urdf_file = os.path.join(octo_planner_share, "urdf", "wheeled_robot.urdf")
     with open(urdf_file, "r") as f:
@@ -53,6 +60,8 @@ def generate_launch_description():
     joint_state_publisher = Node(
         package="joint_state_publisher", executable="joint_state_publisher",
         name="joint_state_publisher", output="screen",
+        # 仅仿真模式启用 (实机关节状态由真实硬件提供)
+        condition=IfCondition(LaunchConfiguration("use_sim")),
     )
 
     # ---- 定位: 仿真用静态TF / 实机用 FAST-LIO+open3d_loc ----
@@ -90,11 +99,12 @@ def generate_launch_description():
             "use_sim_time": False,
         }],
     )
-    # FAST-LIO2 发布 TF: odom_fast_lio2 → body, 桥接到导航所需的 odom 帧
-    fastlio_to_odom_tf = Node(
+    # FAST-LIO2 frame_id 已改为 "odom", 直接发布 odom→base_imu
+    # 通过 base_imu→base_footprint 静态 TF 连接到导航 TF 树
+    imu_to_footprint_tf = Node(
         package="tf2_ros", executable="static_transform_publisher",
-        name="fastlio_to_odom_bridge",
-        arguments=["0", "0", "0", "0", "0", "0", "1", "odom", "odom_fast_lio2"],
+        name="imu_to_footprint_bridge",
+        arguments=["0", "0", "0", "0", "0", "0", "1", "base_imu", "base_footprint"],
         condition=IfCondition(LaunchConfiguration("launch_localization")),
     )
 
@@ -124,8 +134,11 @@ def generate_launch_description():
         }],
     )
 
-    # 实机 TF 链: wheeltec驱动→odom→base_footprint, URDF→base_footprint→base_link
-    # FAST-LIO2→odom_fast_lio2→body, 桥接TF: odom→odom_fast_lio2 (由上面 fastlio_to_odom_tf 发布)
+    # 实机 TF 链:
+    #   FAST-LIO2: odom→base_imu (LiDAR-IMU里程计, frame_id已改为odom)
+    #   imu_to_footprint_tf: base_imu→base_footprint (静态桥接)
+    #   wheeltec驱动: odom_combined→base_footprint (轮式里程计, start_real.sh中有odom→odom_combined桥接)
+    #   URDF: base_footprint→base_link→sensors (robot_state_publisher)
 
     # ---- OctoMap + 全局 A* ----
     pcd_to_octomap = Node(
@@ -296,7 +309,7 @@ def generate_launch_description():
         static_map_to_odom,
         kinematic_sim,
         fast_lio_node,
-        fastlio_to_odom_tf,
+        imu_to_footprint_tf,
         open3d_loc_node,
         pcd_to_octomap,
         map_pkg_mgr,

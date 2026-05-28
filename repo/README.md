@@ -2,7 +2,7 @@
 
 [English](./README.en.md)
 
-一套基于 ROS 2 Humble 的 3D 导航系统，通过 Web 界面交互。本系统已在智元科技 D1 机器狗以及留形科技 Odin 1 空间定位模组上测试通过。
+一套基于 ROS 2 Humble 的 3D 导航系统，支持阿克曼轮式机器人和四足机器人。全局采用 A* 在 OctoMap 八叉树地图上规划，局部采用 EGO-Planner B 样条轨迹优化避障，重定位基于 FAST-LIO2 + open3d_loc ICP 匹配。已在 Wheeltec R550 Plus 阿克曼底盘上部署测试。
 
 <p align="center">
   <img src="./media/1.png" alt="概略图" width="800">
@@ -13,6 +13,35 @@
 - `jie_map_msgs`：地图包保存、加载、导出等自定义服务接口。
 - `jie_octomap`：OctoMap 管理包，负责多种地图格式导入、地图包保存/加载、OctoMap 可视化和编辑。
 - `octo_planner`：基于 OctoMap 的 3D 路径规划、路径跟踪控制和 Web 测试/导航 launch。
+
+## 快速开始
+
+```bash
+# 克隆仓库
+git clone https://github.com/UNDFGS/jie_3d_wheeltec.git
+cd jie_3d_wheeltec
+
+# 一键部署 (安装依赖 + 克隆子模块 + 编译)
+bash setup_workspace.sh
+
+# 仿真测试 (A* + EGO-Planner)
+source /opt/ros/humble/setup.bash
+source ~/integrated_ws/install/setup.bash
+bash start_ego_sim.sh
+
+# 实机部署 (需 LiDAR + 底盘)
+bash start_real.sh /path/to/map.pcd
+```
+
+### 依赖子模块
+
+部署脚本自动克隆以下外部依赖：
+
+| 模块 | 用途 | 上游仓库 |
+|---|---|---|
+| FAST-LIO2 | LiDAR-IMU 紧耦合里程计 | [hku-mars/FAST_LIO](https://github.com/hku-mars/FAST_LIO) |
+| open3d_loc | ICP 全局重定位 | [deepglint/FAST_LIO_LOCALIZATION_HUMANOID](https://github.com/deepglint/FAST_LIO_LOCALIZATION_HUMANOID) |
+| EGO-Planner | B 样条局部轨迹优化 | [ZJU-FAST-Lab/ego-planner-swarm](https://github.com/ZJU-FAST-Lab/ego-planner-swarm) (ros2_version) |
 
 ## 功能概览
 
