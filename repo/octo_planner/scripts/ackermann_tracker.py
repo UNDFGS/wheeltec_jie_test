@@ -32,6 +32,8 @@ class AckermannTracker(Node):
         self.declare_parameter("min_speed", 0.10)
         self.declare_parameter("k_cross_track", 0.8)          # 横向误差增益
         self.declare_parameter("k_heading", 1.0)               # 航向误差增益
+        self.declare_parameter("k_heading_reverse", 2.0)       # 倒车/急转弯时航向误差增益
+        self.declare_parameter("reverse_speed_multiplier", 1.5) # 倒车速度 = min_speed * 此倍数
         self.declare_parameter("lookahead_dist", 1.5)          # 前瞻距离
         self.declare_parameter("goal_tolerance", 0.3)          # 终点容差
         self.declare_parameter("replan_deviation", 1.5)        # 偏离路径多远触发重规划
@@ -267,14 +269,14 @@ class AckermannTracker(Node):
             target_body_y = -target_body_y
             heading_error = math.atan2(target_body_y, target_body_x)
             # 倒车时用较低速度
-            speed = min_speed * 1.5  # ~0.15 m/s
-            k_head = 2.0
+            speed = min_speed * self.get_parameter("reverse_speed_multiplier").value
+            k_head = self.get_parameter("k_heading_reverse").value
         elif target_body_x < 0.0:
             # 目标略偏后 → 最低速前进+大转向绕过去
             turn_factor = 0.12
             speed = max_speed * turn_factor
             speed = max(min_speed, speed)
-            k_head = 2.0
+            k_head = self.get_parameter("k_heading_reverse").value
         else:
             # 正常前进
             turn_factor = max(0.3, 1.0 - abs(heading_error) / 1.5)

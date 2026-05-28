@@ -11,9 +11,11 @@ import math
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Path, Odometry
-from geometry_msgs.msg import PoseStamped, Point, TransformStamped
+from geometry_msgs.msg import PoseStamped, Point, PointStamped, TransformStamped
 from sensor_msgs.msg import PointCloud2, PointField
+from std_msgs.msg import Bool
 from tf2_ros import Buffer, TransformListener, TransformBroadcaster
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 import struct
 
 
@@ -54,10 +56,31 @@ class EGOBridge(Node):
                 reliability=rclpy.qos.ReliabilityPolicy.RELIABLE))
         self.waypoint_pub = self.create_publisher(
             PoseStamped, "/waypoint", 10)
-        # 自动触发导航启动
-        from std_msgs.msg import Bool
+
+        # /start_navigation: 仅在用户显式设目标时触发
         self.start_nav_pub = self.create_publisher(
             Bool, "/start_navigation", 10)
+
+        # QoS 匹配 jie_path_node TRANSIENT_LOCAL
+        planner_qos = QoSProfile(
+            depth=1,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=ReliabilityPolicy.RELIABLE)
+
+        # /start_point 和 /goal_point 发布器
+        self.start_pub = self.create_publisher(
+            PointStamped, "/start_point", planner_qos)
+        self.goal_pub = self.create_publisher(
+            PointStamped, "/goal_point", planner_qos)
+
+        # RViz 2D Goal Pose: BEST_EFFORT QoS
+        rviz_qos = QoSProfile(
+            depth=10,
+            durability=DurabilityPolicy.VOLATILE,
+            reliability=ReliabilityPolicy.BEST_EFFORT)
+        self.goal_pose_sub = self.create_subscription(
+            PoseStamped, "/goal_pose", self.on_goal_pose, rviz_qos)
+
         self._init_time = self.get_clock().now()
 
         # ---- 点云输入: 仿真用 OctoMap，实机用雷达 ----
@@ -65,7 +88,9 @@ class EGOBridge(Node):
         if not self.use_sim:
             lidar_topic = self.get_parameter("lidar_topic").value
             self.lidar_sub = self.create_subscription(
-                PointCloud2, lidar_topic, self.on_lidar_cloud, 10)
+                PointCloud2, lidar_topic, self.on_lidar_cloud, rclpy.qos.QoSProfile(
+                    depth=10, durability=DurabilityPolicy.VOLATILE,
+                    reliability=ReliabilityPolicy.BEST_EFFORT))
             self.get_logger().info(f"Using real LiDAR: {lidar_topic} → /grid_map/cloud")
         else:
             self.get_logger().info("Using simulated cloud from OctoMap markers")
@@ -115,6 +140,38 @@ class EGOBridge(Node):
     def on_lidar_cloud(self, msg):
         self.latest_lidar_cloud = msg
 
+    # ---- RViz 2D Goal Pose → 起点 + 目标 + 触发导航 ----
+    def on_goal_pose(self, msg: PoseStamped):
+        """用户通过 RViz 设目标: 发布起点(当前位置)、目标点、启动导航"""
+        pose = self._get_robot_pose()
+        if pose is None:
+            self.get_logger().warn("Goal received but cannot get robot pose. Skipping.")
+            return
+        rx, ry, rz, ryaw = pose
+
+        # 发布起点 (机器人当前位置)
+        start = PointStamped()
+        start.header.frame_id = self.get_parameter("map_frame").value
+        start.header.stamp = self.get_clock().now().to_msg()
+        start.point.x = rx
+        start.point.y = ry
+        start.point.z = rz
+        self.start_pub.publish(start)
+
+        # 发布目标点
+        goal = PointStamped()
+        goal.header = msg.header
+        goal.point = msg.pose.position
+        self.goal_pub.publish(goal)
+
+        # 触发导航启动
+        self.start_nav_pub.publish(Bool(data=True))
+
+        self.get_logger().info(
+            f"Goal: ({goal.point.x:.1f}, {goal.point.y:.1f}) "
+            f"from robot ({rx:.1f}, {ry:.1f}). Navigation starting."
+        )
+
     # ---- 全局路径 → waypoint ----
     def on_global_path(self, msg: Path):
         # 启动后 2 秒内忽略（安全守卫）
@@ -128,9 +185,8 @@ class EGOBridge(Node):
             wp.pose = last.pose
             self.waypoint_pub.publish(wp)
 
-            # 触发 AckermannTracker 开始导航
-            from std_msgs.msg import Bool
-            self.start_nav_pub.publish(Bool(data=True))
+            # 只转发 waypoint 给 EGO-Planner，不自动触发 start_navigation
+            # 导航启动由用户通过 RViz "2D Goal Pose" 显式触发
 
             self.get_logger().info(
                 f"Waypoint sent to EGO: ({wp.pose.position.x:.1f}, "
@@ -142,10 +198,12 @@ class EGOBridge(Node):
     # ---- 点云发布 (仿真:OctoMap采样 / 实机:雷达直通) ----
     def publish_cloud(self):
         if not self.use_sim:
-            # 实机模式: 转发雷达点云
+            # 实机模式: 转发雷达点云, 统一设置 frame_id 为 map
             if self.latest_lidar_cloud is not None:
-                self.latest_lidar_cloud.header.stamp = self.get_clock().now().to_msg()
-                self.cloud_pub.publish(self.latest_lidar_cloud)
+                cloud = self.latest_lidar_cloud
+                cloud.header.stamp = self.get_clock().now().to_msg()
+                cloud.header.frame_id = self.get_parameter("map_frame").value
+                self.cloud_pub.publish(cloud)
             return
 
         # 仿真模式: OctoMap 采样

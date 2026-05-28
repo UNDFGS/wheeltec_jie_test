@@ -114,6 +114,10 @@ def generate_launch_description():
         package="open3d_loc", executable="global_localization_node",
         name="global_localization_node", output="screen",
         condition=IfCondition(LaunchConfiguration("launch_localization")),
+        remappings=[
+            ("/Odometry_loc", "/Odometry"),           # FAST-LIO2 odometry topic
+            ("/cloud_registered_1", "/cloud_registered"),  # FAST-LIO2 registered cloud
+        ],
         parameters=[{
             "path_map": LaunchConfiguration("pcd_map_path"),
             "pcd_queue_maxsize": 10,
@@ -132,6 +136,19 @@ def generate_launch_description():
             "confidence_loc_th": 0.7,
             "dis_updatemap": 3.5,
         }],
+    )
+    # open3d_loc 帧适配: 原代码为 Go2 设计 (imu_link, motion_link), 这里用 identity TF 桥接
+    ol_base_to_imu = Node(
+        package="tf2_ros", executable="static_transform_publisher",
+        name="ol_base_to_imu",
+        arguments=["0", "0", "0", "0", "0", "0", "1", "base_link", "imu_link"],
+        condition=IfCondition(LaunchConfiguration("launch_localization")),
+    )
+    ol_base_to_motion = Node(
+        package="tf2_ros", executable="static_transform_publisher",
+        name="ol_base_to_motion",
+        arguments=["0", "0", "0", "0", "0", "0", "1", "base_link", "motion_link"],
+        condition=IfCondition(LaunchConfiguration("launch_localization")),
     )
 
     # 实机 TF 链:
@@ -311,6 +328,8 @@ def generate_launch_description():
         fast_lio_node,
         imu_to_footprint_tf,
         open3d_loc_node,
+        ol_base_to_imu,
+        ol_base_to_motion,
         pcd_to_octomap,
         map_pkg_mgr,
         occupied_marker,
